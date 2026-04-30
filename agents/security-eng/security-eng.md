@@ -1,7 +1,7 @@
 ---
 description: Senior security engineer who hunts code flaws leading to binary exploitation, memory corruption, and classic web/system vulns across Windows, macOS, and Linux
 mode: subagent
-model: ollama-cloud/glm-5.1
+model: ollama-cloud/deepseek-v4-pro
 temperature: 0.1
 tools:
   write: false

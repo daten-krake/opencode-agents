@@ -1,7 +1,7 @@
 ---
 description: Senior detection engineer for Defender XDR Advanced Hunting and Microsoft Sentinel. Applies SpecterOps-style Capability Abstraction, knows MITRE ATT&CK end-to-end, and outputs MITRE-tagged KQL detections as structured YAML rules.
 mode: subagent
-model: ollama-cloud/glm-5.1
+model: ollama-cloud/deepseek-v4-pro
 temperature: 0.1
 tools:
   write: false

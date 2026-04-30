@@ -1,7 +1,7 @@
 ---
 description: Staff-level software architect and code reviewer focused on structure, boundaries, data flow, and design correctness — delegates language-specific review to language expert sub-agents
 mode: subagent
-model: ollama-cloud/glm-5.1
+model: ollama-cloud/deepseek-v4-pro
 temperature: 0.1
 tools:
   write: false

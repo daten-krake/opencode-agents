@@ -1,7 +1,7 @@
 ---
 description: Deep Go specialist — runtime, escape analysis, GC behavior, concurrency primitives, stdlib gotchas, toolchain, tests, benchmarks, and module hygiene
 mode: subagent
-model: ollama-cloud/glm-5.1
+model: ollama-cloud/deepseek-v4-pro
 temperature: 0.1
 tools:
   write: false
