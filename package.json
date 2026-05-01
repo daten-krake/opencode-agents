@@ -1,0 +1,8 @@
+{
+  "name": "opencode-agents",
+  "private": true,
+  "dependencies": {
+    "@azure/msal-node": "^3.4.1"
+  },
+  "devDependencies": {}
+}
