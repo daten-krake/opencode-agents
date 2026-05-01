@@ -30,7 +30,7 @@ cd ~/opencode-agents
 
 The script will:
 - Install bun if missing
-- Install `@azure/msal-node` dependency
+- Zero dependencies — pure TypeScript with Bun's built-in `fetch()`
 - Prompt for Tenant ID, Client ID, Client Secret (masked input)
 - Write `~/.local/share/opencode/secrets/defender-xdr.env` (chmod 600)
 - Generate `~/.local/bin/opencode-hunt` wrapper
