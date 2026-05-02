@@ -36,18 +36,6 @@ dst_dir="$GLOBAL_AGENTS/detection_engineer"
 [ -d "$dst_dir" ] || [ -L "$dst_dir" ] && mv "$dst_dir" "$backup/"
 ln -sf "$(realpath "$src_dir")" "$dst_dir"
 
-# --- Skills ---
-mkdir -p "$GLOBAL_SKILLS"
-if [ -d "$REPO_SKILLS" ]; then
-    for skill_dir in "$REPO_SKILLS"/*/; do
-        [ -d "$skill_dir" ] || continue
-        name="$(basename "$skill_dir")"
-        dst="$GLOBAL_SKILLS/$name"
-        [ -d "$dst" ] || [ -L "$dst" ] && mv "$dst" "$backup/"
-        ln -sf "$(realpath "$skill_dir")" "$dst"
-    done
-fi
-
 # --- Tools ---
 mkdir -p "$GLOBAL_TOOLS"
 if [ -d "$REPO_TOOLS" ]; then
@@ -58,6 +46,38 @@ if [ -d "$REPO_TOOLS" ]; then
         [ -f "$dst" ] || [ -L "$dst" ] && mv "$dst" "$backup/"
         ln -sf "$(realpath "$tool_file")" "$dst"
     done
+
+    # Remove orphaned symlinks whose source no longer exists in repo
+    if [ -d "$GLOBAL_TOOLS" ]; then
+        for dst in "$GLOBAL_TOOLS"/*.ts; do
+            [ -L "$dst" ] || continue
+            if [ ! -f "$(readlink -f "$dst")" ]; then
+                mv "$dst" "$backup/"
+            fi
+        done
+    fi
+fi
+
+# --- Skills ---
+mkdir -p "$GLOBAL_SKILLS"
+if [ -d "$REPO_SKILLS" ]; then
+    for skill_dir in "$REPO_SKILLS"/*/; do
+        [ -d "$skill_dir" ] || continue
+        name="$(basename "$skill_dir")"
+        dst="$GLOBAL_SKILLS/$name"
+        [ -d "$dst" ] || [ -L "$dst" ] && mv "$dst" "$backup/"
+        ln -sf "$(realpath "$skill_dir")" "$dst"
+    done
+
+    # Remove orphaned symlinks whose source no longer exists in repo
+    if [ -d "$GLOBAL_SKILLS" ]; then
+        for dst in "$GLOBAL_SKILLS"/*/; do
+            [ -L "$dst" ] || continue
+            if [ ! -d "$(readlink -f "$dst")" ]; then
+                mv "$dst" "$backup/"
+            fi
+        done
+    fi
 fi
 
 echo "Done. Backed up old configs to $backup"

@@ -119,7 +119,7 @@ REPO_ROOT="$REPO_ROOT"
 
 # Pre-flight credential validation
 echo "Checking credentials..."
-if ! bun run "\$REPO_ROOT/tools/validate-ms-graph-credentials.ts" 2>&1; then
+if ! bun run "\$REPO_ROOT/scripts/validate-ms-graph-credentials.ts" 2>&1; then
     echo ""
     echo "Credential validation failed."
     echo "Your client secret may have expired or permissions are misconfigured."
@@ -144,7 +144,7 @@ WRAPPER
 
 validate_credentials() {
     info "Validating credentials against Microsoft Graph..."
-    if bun run "$REPO_ROOT/tools/validate-ms-graph-credentials.ts" 2>&1; then
+    if bun run "$REPO_ROOT/scripts/validate-ms-graph-credentials.ts" 2>&1; then
         ok "Credentials valid. Token acquired successfully."
     else
         warn "Credential validation failed. The secret may be expired or permissions not yet granted."
