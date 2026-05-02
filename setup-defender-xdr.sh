@@ -167,6 +167,17 @@ do_setup() {
 
     ensure_bun
 
+    info "Linking @opencode-ai/plugin for opencode tool discovery..."
+    mkdir -p "$REPO_ROOT/node_modules/@opencode-ai"
+    local plugin_src="$HOME/.config/opencode/node_modules/@opencode-ai/plugin"
+    local plugin_dst="$REPO_ROOT/node_modules/@opencode-ai/plugin"
+    if [ -d "$plugin_src" ]; then
+        ln -sf "$plugin_src" "$plugin_dst"
+        ok "Linked @opencode-ai/plugin"
+    else
+        warn "@opencode-ai/plugin not found at $plugin_src — tool may not load in opencode"
+    fi
+
     info "Installing dependencies..."
     (cd "$REPO_ROOT" && bun install --silent) || die "bun install failed"
 
