@@ -32,7 +32,7 @@ Reference material for the `detection_engineer` subagent. All content sourced fr
 - [**schema-index.md**](sentinel/schema-index.md) — Security-relevant Log Analytics tables with descriptions and doc links
 
 #### Entra ID Tables (`sentinel/entra-id/`)
-- AuditLogs.md, SigninLogs.md, AADNonInteractiveUserSignInLogs.md, AADServicePrincipalSignInLogs.md, AADManagedIdentitySignInLogs.md, AADProvisioningLogs.md, AADUserRiskEvents.md, AADRiskyUsers.md, AADRiskyServicePrincipals.md, AADServicePrincipalRiskEvents.md, AADB2CRequestLogs.md, ADFSSignInLogs.md
+- AuditLogs.md, SigninLogs.md, AADNonInteractiveUserSignInLogs.md, AADServicePrincipalSignInLogs.md, AADManagedIdentitySignInLogs.md, AADProvisioningLogs.md, AADUserRiskEvents.md, AADRiskyUsers.md, AADRiskyServicePrincipals.md, AADServicePrincipalRiskEvents.md, AADB2CRequestLogs.md, ADFSSignInLogs.md, AADGraphActivityLogs.md
 
 #### Microsoft 365 Tables (`sentinel/microsoft365/`)
 - OfficeActivity.md, CloudAppEvents.md, EnrichedMicrosoft365AuditLogs.md, CommunicationComplianceActivity.md, MicrosoftPurviewInformationProtection.md

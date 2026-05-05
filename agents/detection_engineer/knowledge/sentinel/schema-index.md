@@ -20,6 +20,7 @@ This index covers the security-relevant tables a detection engineer needs for Se
 | AADServicePrincipalRiskEvents | Entra ID Protection service principal risk events | [MS Learn](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadserviceprincipalriskevents) |
 | AADB2CRequestLogs | Azure AD B2C request logs | [MS Learn](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadb2crequestlogs) |
 | ADFSSignInLogs | AD FS sign-in logs | [MS Learn](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/adfssigninlogs) |
+| AADGraphActivityLogs | Legacy AAD Graph API request activity — details of API calls to Azure AD Graph | [MS Learn](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadgraphactivitylogs) |
 
 ## Microsoft 365 Tables
 
