@@ -28,11 +28,14 @@ for dir in "$REPO_AGENTS"/*/; do
     fi
 done
 
-# Symlink detection_engineer directory (so knowledge/ is accessible)
-src_dir="$REPO_AGENTS/detection_engineer"
-dst_dir="$GLOBAL_AGENTS/detection_engineer"
-[ -d "$dst_dir" ] || [ -L "$dst_dir" ] && mv "$dst_dir" "$backup/"
-ln -sf "$(realpath "$src_dir")" "$dst_dir"
+# Symlink agent directories that contain a knowledge/ subfolder (so knowledge/ is accessible)
+for dir in "$REPO_AGENTS"/*/; do
+    name="$(basename "$dir")"
+    [ -d "$dir/knowledge" ] || continue
+    dst_dir="$GLOBAL_AGENTS/$name"
+    [ -d "$dst_dir" ] || [ -L "$dst_dir" ] && mv "$dst_dir" "$backup/"
+    ln -sf "$(realpath "$dir")" "$dst_dir"
+done
 
 # --- Skills ---
 mkdir -p "$GLOBAL_SKILLS"
