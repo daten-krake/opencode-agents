@@ -1,6 +1,8 @@
 {
   "name": "opencode-agents",
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "effect": "4.0.0-beta.48"
+  },
   "devDependencies": {}
 }
