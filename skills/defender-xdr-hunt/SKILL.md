@@ -11,20 +11,37 @@ I am a skill that teaches you how to use the `defender-xdr-hunt` custom tool to 
 
 | Situation | Use |
 |-----------|-----|
-| Need to know what columns a table has | `knowledge/defender-xdr/` static schema files |
+| Need to know what columns a table has | Load `detection-engineering` and read its `defender-xdr/` references |
 | Need to validate a column name or type | Use this skill — hit the live API with `| limit 1` |
 | Estimating data volume or cardinality for a rule | Use this skill — `| summarize count()` |
 | Checking real false positive rates before deploying a rule | Use this skill — run the candidate query, inspect results |
-| Need exact schema definition (types, descriptions) | Static `knowledge/` files |
+| Need exact schema definition (types, descriptions) | `detection-engineering` reference files |
 | Iterating on a query — does it return what I expect? | Use this skill — start small, scale up |
+
+## Purposes and Bounds
+
+Set a purpose on every factory query:
+
+- `schema`: table/column probe with `take` or `limit` no greater than 10.
+- `cardinality`: aggregate-only count or summarize query.
+- `sample`: projected false-positive sample with `take` or `limit` no greater
+  than 100.
+- `test`: synthetic harness ending in `| count`.
+- `investigation`: explicitly requested human investigation outside the factory.
+
+Start schema and sample queries with `P1D`; expand to at most `P7D` only when
+needed. Test harnesses use synthetic datatables and return one count row.
 
 ## API constraints
 
 - **Timeout**: 10 minutes per query
 - **Row limit**: 200,000 rows max
+- **Model return limit**: the custom tool returns at most 500 rows and marks
+  larger responses as truncated
 - **Ingestion latency**: 15–30 minutes for device events; email/identity can be longer
 - **Permission required**: `ThreatHunting.Read.All` (application permission, configured in Entra ID)
-- **Default timespan**: 30 days if no `timespan` parameter specified
+- **Default timespan**: purpose-specific in the tool; investigation defaults to
+  30 days for backward compatibility
 
 ## Query construction for live API
 
@@ -66,5 +83,6 @@ The `schema` array tells you exactly what columns were returned and their types.
 
 - Do not run the full detection query against the maximum timespan. Use `| limit 100` when iterating.
 - Do not assume a column exists just because a blog post mentions it. Validate with `| limit 1` first.
-- Do not treat live results as source of truth for column types — the static `knowledge/` files are the reference.
+- Do not treat live results as source of truth for column types. Load
+  `detection-engineering` and use its static table references.
 - Do not run a query and then write a rule without inspecting the results for false positives.

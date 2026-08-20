@@ -7,6 +7,8 @@ Run live Advanced Hunting queries against Microsoft Defender XDR via the Microso
 ```
 ~/.config/opencode/tools/defender-xdr-hunt.ts   → symlinked from repo (via link-agents.sh)
 ~/.config/opencode/skills/defender-xdr-hunt/     → symlinked from repo (via link-agents.sh)
+~/.config/opencode/skills/detection-engineering/ → static KQL and schema references
+~/.config/opencode/commands/detection-factory*.md → cloud/local factory entry points
 ~/.local/share/opencode/secrets/defender-xdr.env → plaintext credentials, chmod 600, outside git
 ~/.local/bin/opencode-hunt                       → generated wrapper with pre-flight validation
 ```
@@ -15,7 +17,7 @@ Credentials live outside the repo in `~/.local/share/opencode/secrets/`. The Typ
 
 ## Quickstart
 
-### 1. Link agents, skills, and tools
+### 1. Link agents, skills, tools, and commands
 
 ```bash
 cd ~/opencode-agents
@@ -90,7 +92,17 @@ I wrote this detection query. Run it against the live API and tell me if the res
 DeviceProcessEvents | where InitiatingProcessFileName =~ "wscript.exe" | project Timestamp, DeviceName, FileName, ProcessCommandLine | take 20
 ```
 
-The agent uses the `defender-xdr-hunt` skill instructions to determine when to query live vs. using the static knowledge files.
+The agent uses `defender-xdr-hunt` for bounded live queries and loads
+`detection-engineering` for static table and column references.
+
+Factory test execution attempts both Defender XDR and Sentinel rule harnesses
+through Defender XDR. Sentinel-only Kusto incompatibilities are reported as
+warnings; they do not prove that a Sentinel query is valid.
+
+Detection-factory commands are autonomous by default. Pass `--gated` to require
+plan and repair approvals. Factory planners are limited to eight direct hunting
+queries per run; implementations and independent reviews still execute the
+required synthetic testblocks.
 
 ## Security
 

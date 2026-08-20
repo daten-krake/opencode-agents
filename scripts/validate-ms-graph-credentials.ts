@@ -1,27 +1,31 @@
-import { readFileSync, mkdirSync, appendFileSync } from "node:fs"
+import { readFileSync, mkdirSync, appendFileSync, chmodSync } from "node:fs"
 import { homedir } from "node:os"
 import { join, dirname } from "node:path"
 
 const SECRETS_FILE = join(homedir(), ".local/share/opencode/secrets/defender-xdr.env")
 const LOG_FILE = join(homedir(), ".local/share/opencode/logs/defender-xdr-hunt.log")
-const TOKEN_TIMEOUT_MS = 30_000
+const TOKEN_TIMEOUT_MS = 60_000
 
 function logStep(message: string) {
   try {
-    mkdirSync(dirname(LOG_FILE), { recursive: true })
-    appendFileSync(LOG_FILE, `[${new Date().toISOString()}] ${message}\n`)
+    mkdirSync(dirname(LOG_FILE), { recursive: true, mode: 0o700 })
+    chmodSync(dirname(LOG_FILE), 0o700)
+    appendFileSync(LOG_FILE, `[${new Date().toISOString()}] ${message}\n`, { mode: 0o600 })
+    chmodSync(LOG_FILE, 0o600)
   } catch {}
 }
 
 function parseEnvFile(path: string): Record<string, string> {
   const content = readFileSync(path, "utf-8")
   const result: Record<string, string> = {}
-  for (const line of content.split("\n")) {
+  for (const line of content.split(/\r?\n/)) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith("#")) continue
     const eq = trimmed.indexOf("=")
     if (eq === -1) continue
-    result[trimmed.slice(0, eq)] = trimmed.slice(eq + 1).replace(/^["']|["']$/g, "")
+    const key = trimmed.slice(0, eq).trim().replace(/^export\s+/, "")
+    const value = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "").trim()
+    result[key] = value
   }
   return result
 }
@@ -104,7 +108,7 @@ async function main() {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error(`FAIL: ${msg}`)
-    console.error("Check: client secret may be expired, or app registration lacks ThreatHunting.Read.All.")
+    console.error("Check: tenant ID, client ID, or client secret is invalid or expired.")
     process.exit(1)
   }
 

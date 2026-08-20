@@ -1,6 +1,6 @@
 # CTI Agent — Knowledge Base
 
-Reference material for the `cti` subagent. All content sourced from MITRE ATT&CK Groups, CISA advisories, vendor threat intel publications, and public OSINT methodology documentation.
+Reference material exposed by the `threat-informed-detection` skill. All content is sourced from MITRE ATT&CK Groups, CISA advisories, vendor threat intel publications, and public OSINT methodology documentation.
 
 ## Directory
 
@@ -23,11 +23,11 @@ Reference material for the `cti` subagent. All content sourced from MITRE ATT&CK
 - Reference guide to SigmaHQ (github.com/SigmaHQ/sigma) and Elastic detection-rules (github.com/elastic/detection-rules): directory structure, rule formats (Sigma YAML, Elastic TOML), how to search by MITRE technique / threat actor / platform, conversion paths to KQL (Sentinel/Defender XDR), and the webfetch URL patterns for searching each repo.
 
 ### Threat Prioritization Report Template (`threat-prioritization-report-template.md`)
-- The output template — the exact structure the agent produces for detection_engineer consumption.
+- The output template used to inform detection-factory planning.
 
-## How the Agent Uses This Knowledge
+## How Advisers Use This Knowledge
 
-The `cti` agent is loaded with this knowledge folder at invocation. When producing a Threat Prioritization Report:
+Threat advisers load the `threat-informed-detection` skill and read the relevant references when producing a Threat Prioritization Report:
 
 1. Maps the customer's industry to threat actors using `industry-threat-mapping.md`
 2. Looks up each threat actor's TTPs and MITRE mappings in `apt-groups.md`

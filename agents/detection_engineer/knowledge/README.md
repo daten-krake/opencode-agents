@@ -1,6 +1,6 @@
 # Detection Engineer — Knowledge Base
 
-Reference material for the `detection_engineer` subagent. All content sourced from Microsoft Learn, MITRE ATT&CK, and community resources.
+Reference material exposed by the `detection-engineering` skill. All content is sourced from Microsoft Learn, MITRE ATT&CK, and community resources.
 
 ## Directory
 
@@ -51,9 +51,9 @@ Reference material for the `detection_engineer` subagent. All content sourced fr
 - [**stage-model.md**](methodology/stage-model.md) — Indicator / Behavioral / Analytic detection spectrum
 - [**mitre-tactics.md**](methodology/mitre-tactics.md) — MITRE ATT&CK Enterprise matrix tactics quick reference
 
-## How the Agent Uses This Knowledge
+## How Factory Roles Use This Knowledge
 
-The `detection_engineer` agent is loaded with this knowledge folder at invocation. When writing a detection:
+Planner, implementer, and reviewer roles load the `detection-engineering` skill and read only the references needed for the current rule:
 
 1. Maps the attack to MITRE ATT&CK using `methodology/mitre-tactics.md`
 2. Identifies the capability abstraction layer using `methodology/capability-abstraction.md`

@@ -37,6 +37,31 @@ GRAPH_SCOPE = "https://graph.microsoft.com/.default"
 TOKEN_URL = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
 HUNT_URL = "https://graph.microsoft.com/v1.0/security/runHuntingQuery"
 
+XDR_UNSUPPORTED_MARKERS = (
+    "_getwatchlist",
+    "externaldata",
+    "workspace(",
+    "adx(",
+    "ingestion_time",
+)
+
+XDR_UNSUPPORTED_SIGNALS = (
+    "failed to resolve",
+    "could not be resolved",
+    "not supported",
+    "not allowed",
+    "unknown function",
+    "does not refer to any known",
+)
+
+EXCLUSION_ENTITY_TYPES = ("IP", "Account", "Host", "FileHash", "Process", "URL")
+
+DURATION_RE = re.compile(
+    r"^P(?:(?P<weeks>\d+(?:\.\d+)?)W)?(?:(?P<days>\d+(?:\.\d+)?)D)?"
+    r"(?:T(?:(?P<hours>\d+(?:\.\d+)?)H)?(?:(?P<minutes>\d+(?:\.\d+)?)M)?"
+    r"(?:(?P<seconds>\d+(?:\.\d+)?)S)?)?$"
+)
+
 
 class QueryHTTPError(RuntimeError):
     def __init__(self, status: int, body: str, retry_after: str | None = None) -> None:
@@ -71,6 +96,35 @@ def retry_delay_seconds(exc: QueryHTTPError) -> int:
     return 60
 
 
+def is_xdr_incompatibility_error(exc: QueryHTTPError) -> bool:
+    """Return true only for recognizable Sentinel-only XDR incompatibilities."""
+    text = error_message(exc.body).lower()
+    for marker in XDR_UNSUPPORTED_MARKERS:
+        marker_index = text.find(marker)
+        if marker_index == -1:
+            continue
+        window = text[max(0, marker_index - 160) : marker_index + len(marker) + 160]
+        if any(signal in window for signal in XDR_UNSUPPORTED_SIGNALS):
+            return True
+    return False
+
+
+def duration_seconds(value: object) -> float | None:
+    if not isinstance(value, str):
+        return None
+    match = DURATION_RE.fullmatch(value)
+    if not match or not any(match.groupdict().values()):
+        return None
+    values = {name: float(raw or 0) for name, raw in match.groupdict().items()}
+    return (
+        values["weeks"] * 604800
+        + values["days"] * 86400
+        + values["hours"] * 3600
+        + values["minutes"] * 60
+        + values["seconds"]
+    )
+
+
 class RuleResult:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -93,10 +147,14 @@ def load_env_file(path: Path) -> None:
 
 
 def graph_token() -> str:
-    load_env_file(DEFAULT_SECRETS)
     tenant = os.environ.get("MS_GRAPH_TENANT_ID")
     client_id = os.environ.get("MS_GRAPH_CLIENT_ID")
     client_secret = os.environ.get("MS_GRAPH_CLIENT_SECRET")
+    if not all((tenant, client_id, client_secret)):
+        load_env_file(DEFAULT_SECRETS)
+        tenant = os.environ.get("MS_GRAPH_TENANT_ID")
+        client_id = os.environ.get("MS_GRAPH_CLIENT_ID")
+        client_secret = os.environ.get("MS_GRAPH_CLIENT_SECRET")
     missing = [
         name
         for name, value in [
@@ -211,6 +269,41 @@ def validate_rule(rule: object) -> list[str]:
         errors.append("engine must be sentinel or defender_xdr")
     if not isinstance(rule.get("query"), str) or not rule.get("query", "").strip():
         errors.append("query must be a non-empty KQL string")
+    query = rule.get("query", "") if isinstance(rule.get("query"), str) else ""
+
+    frequency = duration_seconds(rule.get("query_frequency"))
+    period = duration_seconds(rule.get("query_period"))
+    if "query_frequency" in rule and frequency is None:
+        errors.append("query_frequency must be a supported ISO 8601 duration")
+    if "query_period" in rule and period is None:
+        errors.append("query_period must be a supported ISO 8601 duration")
+    if frequency is not None and period is not None and frequency > period:
+        errors.append("query_frequency must not exceed query_period")
+
+    data_sources = rule.get("data_sources")
+    if (
+        not isinstance(data_sources, list)
+        or not data_sources
+        or not all(isinstance(table, str) and table.strip() for table in data_sources)
+    ):
+        errors.append("data_sources must be a non-empty list of table names")
+
+    if "exclusions" in rule:
+        for entity in EXCLUSION_ENTITY_TYPES:
+            if not re.search(rf"(?m)^\s*let\s+exclusion_{entity}\s*=", query):
+                errors.append(f"query must declare exclusion_{entity}")
+
+        mapped_entities = {
+            mapping.get("entity_type")
+            for mapping in rule.get("entity_mapping", [])
+            if isinstance(mapping, dict)
+        } if isinstance(rule.get("entity_mapping"), list) else set()
+        for entity in mapped_entities.intersection(EXCLUSION_ENTITY_TYPES):
+            if not re.search(
+                rf"(?is)\|\s*where\s+not\s*\([^)]*exclusion_{entity}[^)]*\)", query
+            ):
+                errors.append(f"query must apply exclusion_{entity} for mapped entity {entity}")
+
     testblock = rule.get("testblock")
     if not isinstance(testblock, list) or not testblock:
         errors.append("testblock must be a non-empty list")
@@ -224,6 +317,15 @@ def validate_rule(rule: object) -> list[str]:
         _, error = normalize_testdata(block.get("testdata"))
         if error:
             errors.append(f"testblock[{index}].{error}")
+            continue
+        if isinstance(data_sources, list):
+            normalized, _ = normalize_testdata(block.get("testdata"))
+            assert normalized is not None
+            for table in data_sources:
+                if isinstance(table, str) and not re.search(
+                    rf"(?m)^\s*let\s+{re.escape(table)}\s*=", normalized
+                ):
+                    errors.append(f"testblock[{index}] must define data source {table}")
     return errors
 
 
@@ -274,6 +376,12 @@ def main() -> int:
     parser.add_argument("--timespan", default="P30D", help="Graph hunting query timespan")
     parser.add_argument("--sentinel-workspace", default=os.environ.get("LOG_ANALYTICS_WORKSPACE_ID"), help="Log Analytics workspace ID for sentinel rules")
     parser.add_argument("--all-via-defender", action="store_true", help="Execute sentinel and defender_xdr rules through Defender XDR Advanced Hunting")
+    parser.add_argument(
+        "--sentinel-xdr-errors",
+        choices=["error", "warn"],
+        default="error",
+        help="Classify recognizable Sentinel-only XDR incompatibilities as errors or warnings",
+    )
     parser.add_argument("--engine", choices=["sentinel", "defender_xdr"], help="Only test one engine")
     parser.add_argument("--limit", type=int, help="Limit number of rule files processed")
     parser.add_argument("--start", type=int, default=0, help="Skip this many sorted rule files before processing")
@@ -290,7 +398,14 @@ def main() -> int:
     if args.limit is not None:
         paths = paths[: args.limit]
 
-    summary = {"PASS": 0, "FAIL": 0, "FAIL schema": 0, "ERROR": 0, "NOT EXECUTED": 0}
+    summary = {
+        "PASS": 0,
+        "FAIL": 0,
+        "FAIL schema": 0,
+        "ERROR": 0,
+        "WARN_XDR_INCOMPATIBLE": 0,
+        "NOT EXECUTED": 0,
+    }
     if args.harness_dir:
         args.harness_dir.mkdir(parents=True, exist_ok=True)
 
@@ -355,6 +470,25 @@ def main() -> int:
                     actual = None
                 if actual is None:
                     continue
+            except QueryHTTPError as exc:
+                if (
+                    result.engine == "sentinel"
+                    and args.all_via_defender
+                    and args.sentinel_xdr_errors == "warn"
+                    and is_xdr_incompatibility_error(exc)
+                ):
+                    print(
+                        f"WARN_XDR_INCOMPATIBLE {path} testblock[{index}]: "
+                        f"{error_message(exc.body)}",
+                        flush=True,
+                    )
+                    summary["WARN_XDR_INCOMPATIBLE"] += 1
+                else:
+                    print(f"ERROR {path} testblock[{index}]: {exc}", flush=True)
+                    summary["ERROR"] += 1
+                if args.delay > 0:
+                    time.sleep(args.delay)
+                continue
             except Exception as exc:  # noqa: BLE001 - keep batch testing alive.
                 print(f"ERROR {path} testblock[{index}]: {exc}", flush=True)
                 summary["ERROR"] += 1

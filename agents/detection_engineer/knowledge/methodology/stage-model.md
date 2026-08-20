@@ -10,7 +10,7 @@ Static IOC match — hash, IP address, domain name, known file name, specific re
 - **Strengths**: Low false positive rate (when the IOC is high-confidence). Easy to operationalize.
 - **Weaknesses**: Breaks instantly when the attacker changes the artifact. Hash changes with recompile. Domain changes with infrastructure rotation.
 - **Typical abstraction layer**: Tool (Layer 1)
-- **Tag**: `stage:indicator`
+- **Maturity**: `indicator`
 
 ## Stage 2: Behavioral Detection
 
@@ -20,7 +20,7 @@ Procedure-level pattern — a sequence of events tied to a known attacker workfl
 - **Strengths**: Catches known threat actor procedures. Good signal-to-noise when well-tuned.
 - **Weaknesses**: Operator can swap a procedure step and evade. Requires knowledge of specific adversary playbooks.
 - **Typical abstraction layer**: Procedure or Technique (Layer 2–3)
-- **Tag**: `stage:behavioral`
+- **Maturity**: `behavioral`
 
 ## Stage 3: Analytic Detection
 
@@ -30,7 +30,7 @@ Function/operation-level logic — detects the *effect* of a technique regardles
 - **Strengths**: Most resilient. Survives procedure swaps. Hard to evade without abandoning the technique entirely.
 - **Weaknesses**: Higher development cost. May require complex correlations. Can produce false positives if baseline isn't well-understood.
 - **Typical abstraction layer**: Function (Layer 3–4)
-- **Tag**: `stage:analytic`
+- **Maturity**: `analytic`
 
 ## Relationship to Abstraction Pyramid
 
@@ -42,4 +42,4 @@ Function/operation-level logic — detects the *effect* of a technique regardles
 
 ## Honesty Rule
 
-A Stage 1 indicator rule is perfectly valid if that's what the telemetry supports. Do not dress up an IOC sweep as "analytic." Tag honestly. The pipeline depends on accurate classification for rule lifecycle management.
+A Stage 1 indicator rule is perfectly valid if that's what the telemetry supports. Do not dress up an IOC sweep as "analytic." Set `maturity` honestly. Do not emit the deprecated tag representation.
